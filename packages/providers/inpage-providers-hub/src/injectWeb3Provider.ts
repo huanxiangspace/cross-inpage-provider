@@ -8,12 +8,11 @@ import { ProviderStarcoin } from '@onekeyfe/onekey-starcoin-provider';
 import { ProviderAptos, ProviderAptosMartian } from '@onekeyfe/onekey-aptos-provider';
 import { ProviderConflux } from '@onekeyfe/onekey-conflux-provider';
 import { ProviderTron } from '@onekeyfe/onekey-tron-provider';
-import { ProviderCardano, defineWindowCardanoProperty } from '@onekeyfe/onekey-cardano-provider';
+import { ProviderCardano } from '@onekeyfe/onekey-cardano-provider';
 import { ProviderPrivateExternalAccount } from '@onekeyfe/onekey-private-external-account-provider';
 import { ProviderCosmos } from '@onekeyfe/onekey-cosmos-provider';
 import { ProviderPolkadot, registerPolkadot } from '@onekeyfe/onekey-polkadot-provider';
 import {
-  defineWindowProperty,
   checkWalletSwitchEnable,
 } from '@onekeyfe/cross-inpage-provider-core';
 import { ProviderSui, registerSuiWallet } from '@onekeyfe/onekey-sui-provider';
@@ -67,89 +66,28 @@ function injectWeb3Provider(): unknown {
   
   const bridge: JsBridgeBase = window?.$onekey?.jsBridge;
 
-  const ethereum = new ProviderEthereum({
+  window.$onekey.$private = new ProviderPrivate({
     bridge,
   });
-  const $private = new ProviderPrivate({
-    bridge,
-  });
+
   const solana = new ProviderSolana({
     bridge,
   });
-
-  const starcoin = new ProviderStarcoin({
-    bridge,
-  });
-
-  const martian = new ProviderAptosMartian({
-    bridge,
-  });
-
-  const conflux = new ProviderConflux({
-    bridge,
-  });
-
-  const tron = new ProviderTron({
-    bridge,
-  });
-
-  const sui = new ProviderSui({
-    bridge,
-  });
-
-  const cardano = new ProviderCardano({
-    bridge,
-  });
-
-  const cosmos = new ProviderCosmos({
-    bridge,
-  });
-
-  const polkadot = new ProviderPolkadot({
-    bridge,
-  });
-
-  const webln = new ProviderWebln({
-    bridge,
-  });
-
-  const nostr = new ProviderNostr({
-    bridge,
-  });
-
-  const btc = new ProviderBtc({ bridge });
-  const btcWallet = new ProviderBtcWallet({ bridge });
-
-  const algorand = new ProviderAlgo({ bridge });
-
-  const $privateExternalAccount = new ProviderPrivateExternalAccount({ bridge });
-
-  // providerHub
-  const $onekey = {
-    ...window.$onekey,
-    jsBridge: bridge,
-    $private,
-    $privateExternalAccount,
-    ethereum,
-    solana,
-    starcoin,
-    aptos: martian,
-    conflux,
-    tron,
-    sollet: null,
-    sui,
-    cardano,
-    cosmos,
-    webln,
-    nostr,
-    btc,
-    btcwallet: btcWallet,
-    algorand,
+  window.$onekey.solana = solana;
+  window.$onekey.phantom = {
+    solana: solana,
   };
 
-  defineWindowProperty('$onekey', $onekey, { enumerable: true });
+  window.$onekey.starcoin = new ProviderStarcoin({
+    bridge,
+  });
 
-  const martianProxy = new Proxy(martian, {
+  const aptos = new ProviderAptosMartian({
+    bridge,
+  });
+  window.$onekey.aptos = aptos;
+  window.$onekey.petra = aptos;
+  window.$onekey.martian = new Proxy(aptos, {
     get: (target, property, ...args) => {
       if (property === 'aptosProviderType') {
         return 'martian';
@@ -159,12 +97,64 @@ function injectWeb3Provider(): unknown {
     },
   });
 
-  defineWindowProperty('ethereum', ethereum);
+  window.$onekey.conflux = new ProviderConflux({
+    bridge,
+  });
+
+  window.$onekey.tronLink = new ProviderTron({
+    bridge,
+  });
+
+  const sui = new ProviderSui({
+    bridge,
+  });
+  window.$onekey.suiWallet = sui;
+
+  window.$onekey.unisat = new ProviderBtc({ bridge });
+  window.$onekey.btcWallet = new ProviderBtcWallet({ bridge });
+
+  const algorand = new ProviderAlgo({ bridge });
+  window.$onekey.algorand = algorand;
+  window.$onekey.exodus = {
+    algorand,
+  };
+
+  // Cardano chain provider injection is handled independently.
+  if (checkWalletSwitchEnable()) {
+    window.$onekey.cardano = new ProviderCardano({
+      bridge,
+    });
+  } else {
+    window.$onekey.cardano = window.cardano;
+  }
+
+  // cosmos keplr
+  const cosmos = new ProviderCosmos({
+    bridge,
+  });
+  window.$onekey.keplr = cosmos;
+  window.$onekey.getOfflineSigner = cosmos.getOfflineSigner.bind(cosmos);
+  window.$onekey.getOfflineSignerOnlyAmino = cosmos.getOfflineSignerOnlyAmino.bind(cosmos);
+  window.$onekey.getOfflineSignerAuto = cosmos.getOfflineSignerAuto.bind(cosmos);
+
+  // Lightning Network
+  window.$onekey.webln = new ProviderWebln({
+    bridge,
+  });
+  window.$onekey.nostr = new ProviderNostr({
+    bridge,
+  });
+
+  window.$onekey.$privateExternalAccount = new ProviderPrivateExternalAccount({ bridge });
+
+  const ethereum = new ProviderEthereum({
+    bridge,
+  });
+  window.$onekey.ethereum = ethereum;
   registerEIP6963Provider({
     image: WALLET_CONNECT_INFO.onekey.icon,
     provider: ethereum,
   });
-
   if (checkWalletSwitchEnable()) {
     registerEIP6963Provider({
       uuid: '7677b54f-3486-46e2-4e37-bf8747814f',
@@ -174,44 +164,6 @@ function injectWeb3Provider(): unknown {
       provider: ethereum,
     });
   }
-
-  defineWindowProperty('solana', solana);
-  defineWindowProperty('phantom', { solana });
-  defineWindowProperty('starcoin', starcoin);
-  defineWindowProperty('aptos', martian);
-  defineWindowProperty('petra', martian, { enumerable: true });
-  defineWindowProperty('martian', martianProxy, { enumerable: true });
-  defineWindowProperty('conflux', conflux);
-  defineWindowProperty('tronLink', tron);
-  defineWindowProperty('suiWallet', sui);
-  defineWindowProperty('unisat', btc);
-  defineWindowProperty('btcwallet', btcWallet);
-  defineWindowProperty('algorand', algorand);
-  defineWindowProperty('exodus', {
-    algorand,
-  });
-
-  // Cardano chain provider injection is handled independently.
-  if (checkWalletSwitchEnable()) {
-    defineWindowCardanoProperty('cardano', cardano);
-  }
-
-  // cosmos keplr
-  defineWindowProperty('keplr', cosmos);
-  defineWindowProperty('getOfflineSigner', cosmos.getOfflineSigner.bind(cosmos));
-  defineWindowProperty('getOfflineSignerOnlyAmino', cosmos.getOfflineSignerOnlyAmino.bind(cosmos));
-  defineWindowProperty('getOfflineSignerAuto', cosmos.getOfflineSignerAuto.bind(cosmos));
-
-  // Lightning Network
-  defineWindowProperty('webln', webln);
-  defineWindowProperty('nostr', nostr);
-
-  // ** shim or inject real web3
-  //
-  // if (!window.web3) {
-  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-argument
-  //   window.web3 = new Web3(ethereum as any);
-  // }
   shimWeb3(ethereum);
 
   // TODO use initializeInpageProvider.ts
@@ -240,16 +192,19 @@ function injectWeb3Provider(): unknown {
   }
 
   if (checkWalletSwitchEnable()) {
+    const polkadot = new ProviderPolkadot({
+      bridge,
+    });
     registerPolkadot(polkadot);
-  }
-
-  if (checkWalletSwitchEnable()) {
     registerPolkadot(polkadot, 'polkadot-js', '0.44.1');
   }
+
   setTimeout(() => {
     void detectWebsiteRiskLevel();
     void hackAllConnectButtons();
   }, 1000);
-  return $onekey;
+
+  return window.$onekey;
 }
+
 export { injectWeb3Provider };
