@@ -26,12 +26,12 @@ import { WALLET_CONNECT_INFO } from './connectButtonHack/consts';
 // import Web3 from 'web3'; // cause build error
 
 export type IWindowOneKeyHub = {
-  debugLogger?: any;
+  debugLogger?: unknown;
   jsBridge?: JsBridgeBase;
   ethereum?: ProviderEthereum;
   solana?: ProviderSolana;
   phantom?: { solana?: ProviderSolana };
-  starcoin?: any;
+  starcoin?: unknown;
   aptos?: ProviderAptos;
   petra?: ProviderAptos;
   martian?: ProviderAptosMartian;
@@ -59,6 +59,22 @@ export type IWindowOneKeyHub = {
   };
 };
 
+
+function lazyInitProvider<T>(name: string, createProvider: () => T) {
+  let provider: T;
+  Object.defineProperty(window.$onekey, name, {
+    enumerable: true,
+    configurable: false,
+    get: () => {
+      if (!provider) {
+        provider = createProvider();
+      }
+      return provider;
+    },
+    set: () => void 0,
+  })
+}
+
 function injectWeb3Provider(): unknown {
   if (!window?.$onekey?.jsBridge) {
     throw new Error('OneKey jsBridge not found.');
@@ -66,86 +82,105 @@ function injectWeb3Provider(): unknown {
   
   const bridge: JsBridgeBase = window?.$onekey?.jsBridge;
 
-  window.$onekey.$private = new ProviderPrivate({
+  lazyInitProvider('$private', () => new ProviderPrivate({
+    bridge,
+  }));
+
+  const createSolanaProvider = () => new ProviderSolana({
     bridge,
   });
+  lazyInitProvider('solana', createSolanaProvider);
+  lazyInitProvider('phantom', () => ({
+    solana: createSolanaProvider(),
+  }));
 
-  const solana = new ProviderSolana({
+  lazyInitProvider('starcoin', () => new ProviderStarcoin({
+    bridge,
+  }));
+
+  const createAptosProvider = () => new ProviderAptosMartian({
     bridge,
   });
-  window.$onekey.solana = solana;
-  window.$onekey.phantom = {
-    solana: solana,
-  };
+  lazyInitProvider('aptos', createAptosProvider);
+  lazyInitProvider('petra', createAptosProvider);
+  lazyInitProvider('martian', () => {
+    const aptos = createAptosProvider();
+    return new Proxy(aptos, {
+      get: (target, property, ...args) => {
+        if (property === 'aptosProviderType') {
+          return 'martian';
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return Reflect.get(target, property, ...args);
+      },
+    });
+  });
 
-  window.$onekey.starcoin = new ProviderStarcoin({
+  lazyInitProvider('conflux', () => new ProviderConflux({
+    bridge,
+  }));
+
+  lazyInitProvider('tronLink', () => new ProviderTron({
+    bridge,
+  }));
+
+  const createSuiProvider = () => new ProviderSui({
     bridge,
   });
+  lazyInitProvider('suiWallet', createSuiProvider);
 
-  const aptos = new ProviderAptosMartian({
-    bridge,
-  });
-  window.$onekey.aptos = aptos;
-  window.$onekey.petra = aptos;
-  window.$onekey.martian = new Proxy(aptos, {
-    get: (target, property, ...args) => {
-      if (property === 'aptosProviderType') {
-        return 'martian';
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      return Reflect.get(target, property, ...args);
-    },
-  });
+  lazyInitProvider('unisat', () => new ProviderBtc({ bridge }));
 
-  window.$onekey.conflux = new ProviderConflux({
-    bridge,
-  });
+  lazyInitProvider('btcWallet', () => new ProviderBtcWallet({ bridge }));
 
-  window.$onekey.tronLink = new ProviderTron({
-    bridge,
-  });
-
-  const sui = new ProviderSui({
-    bridge,
-  });
-  window.$onekey.suiWallet = sui;
-
-  window.$onekey.unisat = new ProviderBtc({ bridge });
-  window.$onekey.btcWallet = new ProviderBtcWallet({ bridge });
-
-  const algorand = new ProviderAlgo({ bridge });
-  window.$onekey.algorand = algorand;
-  window.$onekey.exodus = {
-    algorand,
-  };
+  const createAlgorandProvider = () => new ProviderAlgo({ bridge });
+  lazyInitProvider('algorand', createAlgorandProvider);
+  lazyInitProvider('exodus', () => ({
+    algorand: createAlgorandProvider(),
+  }));
 
   // Cardano chain provider injection is handled independently.
   if (checkWalletSwitchEnable()) {
-    window.$onekey.cardano = new ProviderCardano({
+    lazyInitProvider('cardano', () => new ProviderCardano({
       bridge,
-    });
+    }));
   } else {
-    window.$onekey.cardano = window.cardano;
+    lazyInitProvider('cardano', () => window.cardano as ProviderCardano);
   }
 
   // cosmos keplr
-  const cosmos = new ProviderCosmos({
-    bridge,
+  let cosmos: ProviderCosmos;
+  const createCosmosProvider = () => {
+    if (!cosmos) {
+      cosmos = new ProviderCosmos({
+        bridge,
+      });
+    }
+    return cosmos;
+  };
+  lazyInitProvider('keplr', createCosmosProvider);
+  lazyInitProvider('getOfflineSigner', () => {
+    const cosmos = createCosmosProvider();
+    return cosmos.getOfflineSigner.bind(cosmos);
   });
-  window.$onekey.keplr = cosmos;
-  window.$onekey.getOfflineSigner = cosmos.getOfflineSigner.bind(cosmos);
-  window.$onekey.getOfflineSignerOnlyAmino = cosmos.getOfflineSignerOnlyAmino.bind(cosmos);
-  window.$onekey.getOfflineSignerAuto = cosmos.getOfflineSignerAuto.bind(cosmos);
+  lazyInitProvider('getOfflineSignerOnlyAmino', () => {
+    const cosmos = createCosmosProvider();
+    return cosmos.getOfflineSignerOnlyAmino.bind(cosmos);
+  });
+  lazyInitProvider('getOfflineSignerAuto', () => {
+    const cosmos = createCosmosProvider();
+    return cosmos.getOfflineSignerAuto.bind(cosmos);
+  });
 
   // Lightning Network
-  window.$onekey.webln = new ProviderWebln({
+  lazyInitProvider('webln', () => new ProviderWebln({
     bridge,
-  });
-  window.$onekey.nostr = new ProviderNostr({
+  }));
+  lazyInitProvider('nostr', () => new ProviderNostr({
     bridge,
-  });
+  }));
 
-  window.$onekey.$privateExternalAccount = new ProviderPrivateExternalAccount({ bridge });
+  lazyInitProvider('$privateExternalAccount', () => new ProviderPrivateExternalAccount({ bridge }));
 
   const ethereum = new ProviderEthereum({
     bridge,
@@ -171,21 +206,21 @@ function injectWeb3Provider(): unknown {
 
   // Solana Standard Wallet
   if (checkWalletSwitchEnable()) {
-    registerSolanaWallet(solana, {
+    registerSolanaWallet(createSolanaProvider(), {
       icon: WALLET_CONNECT_INFO.onekey.icon as WalletIcon,
     });
   }
 
   // Sui Standard Wallet
   if (checkWalletSwitchEnable()) {
-    registerSuiWallet(sui, {
+    registerSuiWallet(createSuiProvider(), {
       logo: WALLET_CONNECT_INFO.onekey.icon,
     });
   }
 
   // Override the SuiWallet Standard Wallet
   if (checkWalletSwitchEnable()) {
-    registerSuiWallet(sui, {
+    registerSuiWallet(createSuiProvider(), {
       name: 'Sui Wallet',
       logo: WALLET_CONNECT_INFO.onekey.icon,
     });

@@ -5,6 +5,7 @@ import {
 } from '@onekeyfe/cross-inpage-provider-core';
 
 import { injectWeb3Provider } from '@onekeyfe/inpage-providers-hub';
+import { injectProperty } from './inject/property';
 
 const bridge = () =>
   new JsBridgeDesktopInjected({
@@ -12,6 +13,7 @@ const bridge = () =>
   });
 injectJsBridge(bridge);
 
+injectProperty();
 injectWeb3Provider();
 
 // eslint-disable-next-line no-void

@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { JsBridgeBase } from "@onekeyfe/cross-inpage-provider-core";
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 
-function defineProperty(name: string, value?: any, options?: {
+function defineProperty(name: string, value?: unknown, options?: {
   enumerable?: boolean;
 }) {
   Object.defineProperty(window, name, {
@@ -19,11 +18,8 @@ function defineProperty(name: string, value?: any, options?: {
 }
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-function injectProperty(): void {
-  const bridge: JsBridgeBase = window?.$onekey?.jsBridge;
-  const $onekey = {
-    ...window.$onekey,
-    jsBridge: bridge,
+export function injectProperty(): void {
+  const $onekey: Record<string, unknown> = {
     $private: null,
     $privateExternalAccount: null,
     ethereum: null,
@@ -62,5 +58,3 @@ function injectProperty(): void {
     });
   }
 }
-
-export { injectProperty }
