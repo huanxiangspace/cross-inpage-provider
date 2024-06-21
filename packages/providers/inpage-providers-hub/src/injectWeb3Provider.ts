@@ -120,18 +120,24 @@ function injectWeb3Provider(): unknown {
     bridge,
   }));
 
-  lazyInitProvider('tronLink', () => new ProviderTron({
+  const createTronProvider = () => new ProviderTron({
     bridge,
-  }));
+  });
+  lazyInitProvider('tron', createTronProvider);
+  lazyInitProvider('tronLink', createTronProvider);
 
   const createSuiProvider = () => new ProviderSui({
     bridge,
   });
   lazyInitProvider('suiWallet', createSuiProvider);
 
-  lazyInitProvider('unisat', () => new ProviderBtc({ bridge }));
+  const createBtcProvider = () => new ProviderBtc({
+    bridge,
+  });
+  lazyInitProvider('btc', createBtcProvider);
+  lazyInitProvider('unisat', createBtcProvider);
 
-  lazyInitProvider('btcWallet', () => new ProviderBtcWallet({ bridge }));
+  lazyInitProvider('btcwallet', () => new ProviderBtcWallet({ bridge }));
 
   const createAlgorandProvider = () => new ProviderAlgo({ bridge });
   lazyInitProvider('algorand', createAlgorandProvider);
@@ -158,6 +164,7 @@ function injectWeb3Provider(): unknown {
     }
     return cosmos;
   };
+  lazyInitProvider('cosmos', createCosmosProvider);
   lazyInitProvider('keplr', createCosmosProvider);
   lazyInitProvider('getOfflineSigner', () => {
     const cosmos = createCosmosProvider();

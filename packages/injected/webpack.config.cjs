@@ -75,7 +75,7 @@ const extensionConfig = merge(commonConfig, {
   ],
   entry: {
     injectedExtension: './src/injectedExtension.ts',
-    injectedExtensionProperty: './src/injectedExtensionProperty.ts',
+    injectedProperty: './src/injectedProperty.ts',
     injectedNative: './src/injectedNative.ts',
   },
 });
