@@ -47,6 +47,7 @@ export function injectProperty(): void {
     getOfflineSignerAuto: null,
     webln: null,
     nostr: null,
+    ...window.$onekey,
   };
   const enumerableMap: Record<string, boolean> = {
     petra: true,
