@@ -40,6 +40,12 @@ import silo from './sites/silo';
 import mux from './sites/mux';
 import stargateFinance from './sites/stargateFinance';
 import benqi from './sites/benqi';
+import tornado from './sites/tornado';
+import bsquared from './sites/bsquared';
+import gammaxyz from './sites/gammaxyz';
+import syncswap from './sites/syncswap';
+import colend from './sites/colend';
+import unirouter from './sites/unirouter';
 import universal from './universal/index';
 
 function hackAllConnectButtons() {
@@ -83,6 +89,12 @@ function hackAllConnectButtons() {
   mux()
   stargateFinance()
   benqi()
+  tornado()
+  bsquared()
+  gammaxyz()
+  syncswap()
+  colend()
+  unirouter()
   universal()
 }
 
