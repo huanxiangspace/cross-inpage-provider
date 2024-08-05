@@ -18,6 +18,7 @@ import {
 } from '@onekeyfe/cross-inpage-provider-core';
 import { ProviderSui, registerSuiWallet } from '@onekeyfe/onekey-sui-provider';
 import { ProviderWebln } from '@onekeyfe/onekey-webln-provider';
+import { ProviderTon } from '@onekeyfe/onekey-ton-provider';
 import { ProviderNostr } from '@onekeyfe/onekey-nostr-provider';
 import { ProviderBtc, ProviderBtcWallet } from '@onekeyfe/onekey-btc-provider';
 import { ProviderAlgo } from '@onekeyfe/onekey-algo-provider';
@@ -41,6 +42,7 @@ export type IWindowOneKeyHub = {
   keplr?: ProviderCosmos;
   webln?: ProviderWebln;
   nostr?: ProviderNostr;
+  ton?: ProviderTon;
   unisat?: ProviderBtc;
   btcwallet?: ProviderBtcWallet;
   $private?: ProviderPrivate;
@@ -101,6 +103,10 @@ function injectWeb3Provider(): unknown {
     bridge,
   });
 
+  const ton = new ProviderTon({
+    bridge,
+  });
+
   const cosmos = new ProviderCosmos({
     bridge,
   });
@@ -138,6 +144,7 @@ function injectWeb3Provider(): unknown {
     tron,
     sollet: null,
     sui,
+    ton,
     cardano,
     cosmos,
     webln,
@@ -184,6 +191,7 @@ function injectWeb3Provider(): unknown {
   defineWindowProperty('conflux', conflux);
   defineWindowProperty('tronLink', tron);
   defineWindowProperty('suiWallet', sui);
+  defineWindowProperty('ton', ton);
   defineWindowProperty('unisat', btc);
   defineWindowProperty('btcwallet', btcWallet, {
     disablePlatform: ['extension', 'desktop'],
